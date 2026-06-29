@@ -1,14 +1,54 @@
-if len(headlines) >= 4:
-                    break
+import os
+import time
+from datetime import datetime, timedelta, timezone
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
-    except Exception as e:
-        print(f"❌ 抓取 [{name}] 发生连接异常: {e}")
-        return [f"该时段网络连接暂不可达 (错误反馈: {e})"]
+def fetch_site_headlines(name, url):
+    print(f"正在抓取 [{name}] -> {url} ...")
+    headlines = []
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+    try:
+        response = requests.get(url, headers=headers, timeout=15)
+        if response.status_code != 200:
+            return [f"因网站限制，暂无实时更新（状态码 {response.status_code}）"]
         
+        soup = BeautifulSoup(response.text, 'html.parser')
+        found_tags = soup.find_all(['h1', 'h2', 'h3'])
+        
+        for tag in found_tags:
+            text = tag.get_text(strip=True)
+            if 18 < len(text) < 130:
+                link_tag = tag.find('a') if tag.name != 'a' else tag
+                if not link_tag and tag.parent.name == 'a':
+                    link_tag = tag.parent
+                href = link_tag.get('href') if link_tag else None
+                item = f"[{text}]({urljoin(url, href)})" if href else text
+                if item not in headlines:
+                    headlines.append(item)
+            if len(headlines) >= 5:
+                break
+                
+        if not headlines:
+            links = soup.find_all('a')
+            for link in links:
+                text = link.get_text(strip=True)
+                if 25 < len(text) < 100 and not text.startswith(('Terms', 'Privacy', 'Sign In', 'Cookie')):
+                    href = link.get('href')
+                    item = f"[{text}]({urljoin(url, href)})" if href else text
+                    if item not in headlines:
+                        headlines.append(item)
+                if len(headlines) >= 4:
+                    break
+    except Exception as e:
+        return [f"该时段网络连接暂不可达 (错误: {e})"]
+    
     return headlines if headlines else ["今日该时段暂无置顶简报更新"]
 
 def main():
-    # 完美装载你提供的 13 个顶级全球财经与科技目标源
     urls = [
         ("Reuters (路透社)", "https://www.reuters.com"),
         ("Bloomberg (彭博社)", "https://www.bloomberg.com"),
@@ -25,34 +65,34 @@ def main():
         ("SEC Edgar (美国证监会披露系统)", "https://www.sec.gov/cgi-bin/browse-edgar")
     ]
     
-    print("🚀 全球财经 13 大基地轮询轰炸系统启动...")
-    
     md_content = []
     md_content.append("# 🌐 全球核心财经与科技全景看板")
     
-    # 获取北京时间（GitHub 默认是 UTC，这里简单标注一下方便查看）
-    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    md_content.append(f"> 🤖 智能机器人自动巡检更新时间：`{current_time}` (基于云端海外高速节点扫描)\n")
+    # 强制锁定北京时间 (UTC+8)
+    tz_beijing = timezone(timedelta(hours=8))
+    now_beijing = datetime.now(timezone.utc).astimezone(tz_beijing)
+    
+    time_string = now_beijing.strftime('%Y-%m-%d %H:%M:%S')
+    md_content.append(f"> 🤖 智能机器人自动巡检更新时间：`{time_string}` (北京时间)\n")
     md_content.append("--- \n")
     
-    # 开始多基地轰炸式循环抓取
     for name, url in urls:
         headlines = fetch_site_headlines(name, url)
         md_content.append(f"### 📌 {name}")
         for index, headline in enumerate(headlines, 1):
             md_content.append(f"{index}. {headline}")
-        md_content.append("")  # 留空行隔离各网站内容
-        
-        # 💡 礼貌爬虫机制：每次抓取完一个网站，小憩 1 秒钟，防止频率过快被对方列入黑名单
+        md_content.append("")
         time.sleep(1)
         
     final_text = "\n".join(md_content)
     
-    # 完美覆写本地的看板文件
-    with open("news_today.md", "w", encoding="utf-8") as f:
+    # 动态命名生成文件：形如 2026-06-29_2230.md
+    file_name = now_beijing.strftime('%Y-%m-%d_%H%M.md')
+    
+    with open(file_name, "w", encoding="utf-8") as f:
         f.write(final_text)
         
-    print("🏁 恭喜！13 大全球站点全部轮询扫描完成，已完美写入 news_today.md！")
+    print(f"🏁 简报已完美写入新文件：{file_name}")
 
 if __name__ == "__main__":
     main()
