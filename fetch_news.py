@@ -1,68 +1,4 @@
-import os
-import time
-from datetime import datetime
-import requests
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
-
-def fetch_site_headlines(name, url):
-    print(f"正在抓取 [{name}] -> {url} ...")
-    headlines = []
-    
-    # 统一使用强大的 Headers
-    # 特别声明：包含符合美国证监会 SEC EDGAR 要求的声明格式，防止因未声明身份被 SEC 直接 403 封禁
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 FinanceBloggerBot/1.0 (contact@myfinanceblog.com)'
-    }
-    
-    try:
-        response = requests.get(url, headers=headers, timeout=15)
-        
-        # 很多顶级财经网（如 Bloomberg、WSJ）有极强的 Cloudflare 盾，如果遇到 403/429，进行优雅降级兜底
-        if response.status_code != 200:
-            print(f"⚠️ [{name}] 返回状态码 {response.status_code}，可能触发了反爬或付费墙拦截。")
-            return [f"因该网站防火墙限制，暂无实时更新（状态码 {response.status_code}，可稍后手动刷新）"]
-            
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # 💡 智能通用核心算法：优先提取页面中最核心的标题标签 (h1, h2, h3)
-        # 这种做法比硬编码 class 类名更耐用，因为各大财经网前端几乎每周都在改标签样式名
-        found_tags = soup.find_all(['h1', 'h2', 'h3'])
-        
-        for tag in found_tags:
-            text = tag.get_text(strip=True)
-            # 过滤掉太短（导航栏、时间标签）或太长（整段导语）的干扰信息
-            if 18 < len(text) < 130:
-                # 寻找标题内或者紧邻的超链接
-                link_tag = tag.find('a') if tag.name != 'a' else tag
-                if not link_tag and tag.parent.name == 'a':
-                    link_tag = tag.parent
-                    
-                href = link_tag.get('href') if link_tag else None
-                if href:
-                    full_url = urljoin(url, href)  # 自动把相对路径（如 /news/123）补全为绝对路径
-                    item = f"[{text}]({full_url})"
-                else:
-                    item = text
-                    
-                if item not in headlines:
-                    headlines.append(item)
-            
-            if len(headlines) >= 5:  # 每个网站最多抓取前 5 条最新最核心的动态，避免版面过长
-                break
-                
-        # 🔍 备用算法兜底：如果有些网站不用 h 标签，改用普通 a 链接，则启动文本长度过滤机制
-        if not headlines:
-            links = soup.find_all('a')
-            for link in links:
-                text = link.get_text(strip=True)
-                if 25 < len(text) < 100 and not text.startswith(('Terms', 'Privacy', 'Sign In', 'Cookie', 'Subscribe')):
-                    href = link.get('href')
-                    full_url = urljoin(url, href) if href else url
-                    item = f"[{text}]({full_url})"
-                    if item not in headlines:
-                        headlines.append(item)
-                if len(headlines) >= 4:
+if len(headlines) >= 4:
                     break
 
     except Exception as e:
@@ -120,3 +56,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+           
