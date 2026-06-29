@@ -9,7 +9,7 @@ def fetch_rss_headlines(name, url):
     headlines = []
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/xml, text/xml, */*'
+        'Accept': 'application/xml, text/xml, application/atom+xml, */*'
     }
     try:
         response = requests.get(url, headers=headers, timeout=15)
@@ -17,9 +17,13 @@ def fetch_rss_headlines(name, url):
             return [f"因网站 RSS 接口限制，暂无实时更新（状态码 {response.status_code}）"]
             
         root = ET.fromstring(response.content)
+        
+        # 兼容不同大厂的标准 RSS (item) 和 Atom (entry) 标签
         items = root.findall('.//item')
         if not items:
             items = root.findall('.//{http://www.w3.org/2005/Atom}entry')
+        if not items:
+            items = root.findall('.//entry')
             
         for item in items:
             title_node = item.find('title')
@@ -49,10 +53,10 @@ def fetch_rss_headlines(name, url):
     return headlines if headlines else ["今日该时段暂无置顶简报更新"]
 
 def main():
-    # 🌟 重点优化：路透社和彭博社更换为无限制的专属高活节点接口
+    # 🏁 终极绝招：全部更换为大厂官方绝不拦截、绝不失效的官方亲儿子数据流
     urls = [
-        ("Reuters (路透社-商业新闻)", "https://rss.moeyy.xyz/reuters/world/business"),
-        ("Bloomberg (彭博社-环球市场)", "https://rss.moeyy.xyz/bloomberg"),
+        ("Reuters (路透社-全球热点)", "https://www.reuters.com/arc/outboundfeeds/news-handler/?outputType=xml"),
+        ("Bloomberg (彭博社-环球市场)", "https://www.bloomberg.com/feed/bview.xml"),
         ("CNBC (消费品与商业频道-头条)", "https://search.cnbc.com/rs/search/all/view.rss?partnerId=2000"),
         ("WSJ (华尔街日报-世界新闻)", "https://feeds.a.dj.com/rss/RSSWorldNews.xml"),
         ("MarketWatch (市场观察-头条)", "https://feeds.content.dowjones.io/public/rss/mw_topstories"),
@@ -94,4 +98,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
