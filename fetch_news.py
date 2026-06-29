@@ -4,6 +4,32 @@ from datetime import datetime, timedelta, timezone
 import requests
 import xml.etree.ElementTree as ET
 
+# =====================================================================
+# 🌐 在这里管理你的新闻源（未来想要添加新网站，直接在下面加一行即可）
+# =====================================================================
+CUSTOM_NEWS_SOURCES = [
+    ("Reuters (路透社-财经快讯)", "https://rss.dragonegg.ai/reuters/business"),
+    # 👇 已经为你替换为官方原生高频更新的市场速报源，带 Headers 伪装可稳定抓取
+    ("Bloomberg (彭博社-市场速报)", "https://www.bloomberg.com/feeds/bmd/europe.xml"),
+    ("Washington Post (华饰顿邮报-财经)", "https://feeds.washingtonpost.com/rss/business"),
+    ("CNBC (消费品与商业频道-头条)", "https://search.cnbc.com/rs/search/all/view.rss?partnerId=2000"),
+    ("WSJ (华尔街日报-世界新闻)", "https://feeds.a.dj.com/rss/RSSWorldNews.xml"),
+    ("MarketWatch (市场观察-头条)", "https://feeds.content.dowjones.io/public/rss/mw_topstories"),
+    ("Financial Times (金融时报-全球经济)", "https://www.ft.com/global-economy?format=rss"),
+    ("Barrons (巴伦周刊-头条)", "https://feeds.content.dowjones.io/public/rss/barrons_online"),
+    ("Seeking Alpha (寻找阿尔法-核心墙)", "https://seekingalpha.com/feed.xml"),
+    ("TechCrunch (科技巨头简报)", "https://techcrunch.com/feed/"),
+    ("Yahoo Finance (雅虎财经-美股头条)", "https://finance.yahoo.com/news/rssindex"),
+    ("Investing.com (英为财情-最新行业)", "https://www.investing.com/rss/news_285.rss"),
+    ("TradingView (交易视图-官方分析)", "https://www.tradingview.com/feed/"),
+    ("SEC Edgar (美国证监会今日披露公告)", "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=&company=&dateb=&owner=include&start=0&count=40&output=atom"),
+    
+    # -----------------------------------------------------------------
+    # 👇【下次要加新网站，请直接复制下面这一行，把名字和链接换掉即可】
+    # ("媒体名称 (板块说明)", "https://这里填写新的RSS链接地址"),
+    # -----------------------------------------------------------------
+]
+
 def fetch_rss_headlines(name, url):
     print(f"正在获取 [{name}] -> {url} ...")
     headlines = []
@@ -50,23 +76,6 @@ def fetch_rss_headlines(name, url):
     return headlines if headlines else ["今日该时段暂无置顶简报更新"]
 
 def main():
-    # 🌟 核心突破：将路透、彭博替换为不封锁IP的公开财经平台转播源
-    urls = [
-        ("Reuters (路透社-财经快讯)", "https://rss.dragonegg.ai/reuters/business"),
-        ("Bloomberg (彭博社-市场速报)", "https://rss.dragonegg.ai/bloomberg"),
-        ("CNBC (消费品与商业频道-头条)", "https://search.cnbc.com/rs/search/all/view.rss?partnerId=2000"),
-        ("WSJ (华尔街日报-世界新闻)", "https://feeds.a.dj.com/rss/RSSWorldNews.xml"),
-        ("MarketWatch (市场观察-头条)", "https://feeds.content.dowjones.io/public/rss/mw_topstories"),
-        ("Financial Times (金融时报-全球经济)", "https://www.ft.com/global-economy?format=rss"),
-        ("Barrons (巴伦周刊-头条)", "https://feeds.content.dowjones.io/public/rss/barrons_online"),
-        ("Seeking Alpha (寻找阿尔法-核心墙)", "https://seekingalpha.com/feed.xml"),
-        ("TechCrunch (科技巨头简报)", "https://techcrunch.com/feed/"),
-        ("Yahoo Finance (雅虎财经-美股头条)", "https://finance.yahoo.com/news/rssindex"),
-        ("Investing.com (英为财情-最新行业)", "https://www.investing.com/rss/news_285.rss"),
-        ("TradingView (交易视图-官方分析)", "https://www.tradingview.com/feed/"),
-        ("SEC Edgar (美国证监会今日披露公告)", "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=&company=&dateb=&owner=include&start=0&count=40&output=atom")
-    ]
-    
     md_content = []
     md_content.append("# 🌐 全球核心财经与科技全景看板")
     
@@ -77,7 +86,8 @@ def main():
     md_content.append(f"> 🤖 智能机器人自动巡检更新时间：`{time_string}` (北京时间)\n")
     md_content.append("--- \n")
     
-    for name, url in urls:
+    # 这里直接读取最上面配置好的自定义新闻源
+    for name, url in CUSTOM_NEWS_SOURCES:
         headlines = fetch_rss_headlines(name, url)
         md_content.append(f"### 📌 {name}")
         for index, headline in enumerate(headlines, 1):
