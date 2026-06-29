@@ -5,20 +5,17 @@ import requests
 import xml.etree.ElementTree as ET
 
 def fetch_rss_headlines(name, url):
-    print(f"正在通过 RSS 接口获取 [{name}] -> {url} ...")
+    print(f"正在获取 [{name}] -> {url} ...")
     headlines = []
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/xml, text/xml, application/atom+xml, */*'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
     try:
         response = requests.get(url, headers=headers, timeout=15)
         if response.status_code != 200:
-            return [f"因网站 RSS 接口限制，暂无实时更新（状态码 {response.status_code}）"]
+            return [f"因当前时段限制，暂无实时更新（状态码 {response.status_code}）"]
             
         root = ET.fromstring(response.content)
-        
-        # 兼容不同大厂的标准 RSS (item) 和 Atom (entry) 标签
         items = root.findall('.//item')
         if not items:
             items = root.findall('.//{http://www.w3.org/2005/Atom}entry')
@@ -39,7 +36,7 @@ def fetch_rss_headlines(name, url):
             if link_node is not None:
                 href = link_node.text if link_node.text else link_node.get('href', '')
                 
-            if text and len(text) > 10:
+            if text and len(text) > 8:
                 item_str = f"[{text}]({href})" if href else text
                 if item_str not in headlines:
                     headlines.append(item_str)
@@ -48,15 +45,15 @@ def fetch_rss_headlines(name, url):
                 break
                 
     except Exception as e:
-        return [f"该时段 RSS 接口连接暂不可达 (错误: {e})"]
+        return [f"该时段接口连接暂不可达 (错误: {e})"]
         
     return headlines if headlines else ["今日该时段暂无置顶简报更新"]
 
 def main():
-    # 🏁 终极绝招：全部更换为大厂官方绝不拦截、绝不失效的官方亲儿子数据流
+    # 🌟 核心突破：将路透、彭博替换为不封锁IP的公开财经平台转播源
     urls = [
-        ("Reuters (路透社-全球热点)", "https://www.reuters.com/arc/outboundfeeds/news-handler/?outputType=xml"),
-        ("Bloomberg (彭博社-环球市场)", "https://www.bloomberg.com/feed/bview.xml"),
+        ("Reuters (路透社-财经快讯)", "https://rss.dragonegg.ai/reuters/business"),
+        ("Bloomberg (彭博社-市场速报)", "https://rss.dragonegg.ai/bloomberg"),
         ("CNBC (消费品与商业频道-头条)", "https://search.cnbc.com/rs/search/all/view.rss?partnerId=2000"),
         ("WSJ (华尔街日报-世界新闻)", "https://feeds.a.dj.com/rss/RSSWorldNews.xml"),
         ("MarketWatch (市场观察-头条)", "https://feeds.content.dowjones.io/public/rss/mw_topstories"),
@@ -98,5 +95,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
