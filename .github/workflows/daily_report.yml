@@ -1,4 +1,4 @@
-name: name: Financial News Daily Mailer
+name: Financial News Daily Mailer
 
 on:
   schedule:
@@ -45,10 +45,15 @@ jobs:
       id: read_report
       run: |
         # 自动寻找当前目录下最新生成的 .md 日报文件
-        LATEST_FILE=$(ls -t *.md | head -n 1)
-        echo "REPORT_CONTENT<<EOF" >> $GITHUB_OUTPUT
-        cat "$LATEST_FILE" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
+        # 如果找不到文件，输出友好提示，防止工作流直接死掉
+        LATEST_FILE=$(ls -t *.md 2>/dev/null | head -n 1)
+        if [ -z "$LATEST_FILE" ]; then
+          echo "REPORT_CONTENT=今天尚未生成新的财经日报文本，请检查 Python 脚本状态。" >> $GITHUB_OUTPUT
+        else
+          echo "REPORT_CONTENT<<EOF" >> $GITHUB_OUTPUT
+          cat "$LATEST_FILE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        fi
 
     - name: Send Telegram Message
       uses: appleboy/telegram-action@master
