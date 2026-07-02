@@ -1,12 +1,9 @@
-name: Financial News Daily Mailer
+name: name: Financial News Daily Mailer
 
 on:
   schedule:
     - cron: '7 0 * * *'
   workflow_dispatch:
-
-
-
 
 jobs:
   send-news-mail:
@@ -43,3 +40,23 @@ jobs:
       run: |
         git add *.md
         git diff --quiet && git diff --staged --quiet || (git commit -m "自动更新今日财经新闻简报" && git push)
+
+    - name: Read Daily Report Content
+      id: read_report
+      run: |
+        # 自动寻找当前目录下最新生成的 .md 日报文件
+        LATEST_FILE=$(ls -t *.md | head -n 1)
+        echo "REPORT_CONTENT<<EOF" >> $GITHUB_OUTPUT
+        cat "$LATEST_FILE" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Send Telegram Message
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_TO }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        format: markdown
+        message: |
+          📊 **今日全球核心财经与科技全景看板**
+          
+          ${{ steps.read_report.outputs.REPORT_CONTENT }}
