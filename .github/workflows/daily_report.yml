@@ -2,9 +2,9 @@ name: Financial News Daily Mailer
 
 on:
   schedule:
-    # 设定在每天北京时间早上 08:07 运行（对应 UTC 时间 00:07）
     - cron: '7 0 * * *'
-  workflow_dispatch: # 保持手动触发按钮，注意：它必须和 schedule 对齐！
+  workflow_dispatch:
+
 
 
 
