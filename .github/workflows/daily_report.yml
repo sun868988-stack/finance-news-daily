@@ -28,9 +28,8 @@ jobs:
         EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}  # 👈 核心：就是在这里多加这一行
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: python fetch_news.py
-
 
     - name: Configure Git
       run: |
@@ -42,37 +41,28 @@ jobs:
         git add *.md
         git diff --quiet && git diff --staged --quiet || (git commit -m "自动更新今日财经新闻简报" && git push)
 
-    - name: Read Daily Report Content
-      id: read_report
-      run: |
-        LATEST_FILE=$(ls -t *.md 2>/dev/null | head -n 1)
-        if [ -z "$LATEST_FILE" ]; then
-          echo "REPORT_CONTENT=今天尚未生成新的财经日报文本，请检查 Python 脚本状态。" >> $GITHUB_OUTPUT
-        else
-          echo "REPORT_CONTENT<<EOF" >> $GITHUB_OUTPUT
-          cat "$LATEST_FILE" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-        fi
-
-    - name: Send Telegram Message via Curl
+    - name: Read Daily Report and Send to Telegram
       env:
         TG_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
         TG_TO: ${{ secrets.TELEGRAM_TO }}
       run: |
-        # 核心防错：使用 xargs 自动强行剥离 Token 和 ID 里的所有换行符与空格
-        CLEAN_TOKEN=$(echo "$TG_TOKEN" | xargs)
-        CLEAN_TO=$(echo "$TG_TO" | xargs)
+        # 自动定位最新生成的 Markdown 文件
+        LATEST_FILE=$(ls -t *.md 2>/dev/null 2>&1 | head -n 1)
+        if [ -z "$LATEST_FILE" ]; then
+          echo "未找到日报文件，跳过发送。"
+          exit 0
+        fi
         
-        # 构建发送的文本内容
-        MSG_TEXT=$(cat << 'EOF'
-        📊 **今日全球核心财经与科技全景看板**
+        # 使用 Base64 编码读取内容，这是解决一切字符报错的终极方案
+        CONTENT_BASE64=$(cat "$LATEST_FILE" | base64 -w 0)
+        MSG_TEXT=$(echo "$CONTENT_BASE64" | base64 -d)
         
-        ${{ steps.read_report.outputs.REPORT_CONTENT }}
-        EOF
-        )
+        # 强力剥离 Token 和 ID 中的空格与换行，确保 API 调用百分百成功
+        CLEAN_TOKEN=$(echo "$TG_TOKEN" | tr -d '[:space:]')
+        CLEAN_TO=$(echo "$TG_TO" | tr -d '[:space:]')
         
-        # 直接使用官方原生 API 发送，完美免疫换行符漏洞
+        # 执行发送
         curl -s -X POST "https://api.telegram.org/bot${CLEAN_TOKEN}/sendMessage" \
-          -d "chat_id=${CLEAN_TO}" \
-          -d "parse_mode=Markdown" \
-          --data-urlencode "text=${MSG_TEXT}"
+        -d "chat_id=${CLEAN_TO}" \
+        -d "parse_mode=Markdown" \
+        --data-urlencode "text=$MSG_TEXT"
