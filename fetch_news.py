@@ -108,6 +108,33 @@ CUSTOM_NEWS_SOURCES = [
     # 🇨🇳 国内宏观与 A 股/港股核心风向
     ("Xinhua News (新华网-核心财经大政方针)", "http://www.news.cn/fortune/pro/rss.xml"),
 ]
+import os
+import time
+from datetime import datetime, timedelta, timezone
+import requests
+import feedparser
+
+# =====================================================================
+# 🌐 全球核心财经与宏观数据源（高饱满度、GitHub 直连无障碍版）
+# =====================================================================
+CUSTOM_NEWS_SOURCES = [
+    # 🌟 华尔街核心大盘与科技前沿
+    ("WSJ (华尔街日报-世界新闻)", "https://feeds.a.dj.com/rss/RSSWorldNews.xml"),
+    ("CNBC (消费品与商业频道-头条)", "https://search.cnbc.com/rs/search/all/view.rss?partnerId=2000"),
+    ("MarketWatch (市场观察-热点头条)", "https://feeds.content.dowjones.io/public/rss/mw_topstories"),
+    ("Yahoo Finance (雅虎财经-美股头条)", "https://finance.yahoo.com/news/rssindex"),
+    ("Financial Times (金融时报-全球经济)", "https://www.ft.com/global-economy?format=rss"),
+    
+    # 📈 个股基本面、技术分析与行业风口
+    ("Investing.com (全球投资网-核心美股快讯)", "https://www.investing.com/rss/news_25.rss"),
+    ("Reuters (路透社-全球商业与金融快讯)", "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best-topic"),
+    ("TradingView (交易视图-官方技术分析)", "https://www.tradingview.com/feed/"),
+    ("TechCrunch (科技巨头与一级市场简报)", "https://techcrunch.com/feed/"),
+    ("Seeking Alpha (寻找阿尔法-个股核心墙)", "https://seekingalpha.com/feed.xml"),
+    
+    # 🇨🇳 国内宏观与 A 股/港股核心风向
+    ("Xinhua News (新华网-核心财经大政方针)", "http://www.news.cn/fortune/pro/rss.xml"),
+]
 
 def fetch_rss_headlines(name, url):
     print(f"正在获取 [{name}] -> {url} ...")
@@ -129,7 +156,7 @@ def fetch_rss_headlines(name, url):
             if text and len(text) > 6:
                 if text not in headlines:
                     headlines.append(text)
-            if len(headlines) >= 10:  # 🚀 这里的上限已经为你调整为 10 条！
+            if len(headlines) >= 10:  # 每个源最多抓取 10 条最新的
                 break
                 
     except Exception as e:
