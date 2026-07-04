@@ -36,6 +36,12 @@ def fetch_rss_headlines(name, url):
         if response.status_code != 200:
             return [f"暂无实时更新 (Status: {response.status_code})"]
             
+        # 🛡️ 容错保护 1：如果返回的数据不包含 XML 特征，直接跳过，防止解析崩溃
+        content_str = response.content.decode('utf-8', errors='ignore').strip()
+        if not content_str.startswith('<'):
+            print(f"⚠️ [{name}] 返回了非 XML 内容，可能遭遇频率限制，已安全跳过。")
+            return ["该时段接口连接暂不可达"]
+
         root = ET.fromstring(response.content)
         items = root.findall('.//item') or root.findall('.//{http://www.w3.org/2005/Atom}entry') or root.findall('.//entry')
             
@@ -51,6 +57,8 @@ def fetch_rss_headlines(name, url):
                 break
                 
     except Exception as e:
+        # 🛡️ 容错保护 2：捕获所有可能引发异常的解析错误，确保程序绝不中断
+        print(f"⚠️ [{name}] 处理数据时发生异常: {e}，已自动跳过。")
         return [f"该时段接口连接暂不可达"]
         
     return headlines if headlines else ["今日该时段暂无置顶简报更新"]
@@ -80,11 +88,11 @@ def main():
         f"{all_raw_text}"
     )
     
-    # 📂 3. 【核心修复】强制检查并自动建立文件夹，解决空文件夹报错问题
+    # 📂 3. 检查并自动建立文件夹
     folder_name = "每日股市财经新闻"
     if not os.path.exists(folder_name):
         os.makedirs(folder_name, exist_ok=True)
-        print(f"📁 已在运行目录成功创建或确认文件夹: {folder_name}")
+        print(f"📁 已在运行目录确认/创建文件夹: {folder_name}")
         
     file_name = os.path.join(folder_name, now_beijing.strftime('%Y-%m-%d_%H%M.md'))
     with open(file_name, "w", encoding="utf-8") as f:
