@@ -1,4 +1,4 @@
-Name: Financial News Daily Mailer
+name: Financial News Daily Mailer
 
 on:
   schedule:
@@ -28,7 +28,6 @@ jobs:
         EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
-        # 🛡️ 安全清理：已彻底移除传输给 Python 的 GEMINI_API_KEY
       run: python fetch_news.py
 
     - name: Configure Git
@@ -38,7 +37,6 @@ jobs:
 
     - name: Commit and Push Changes
       run: |
-        git add *.md
+        # 🛡️ 自动追踪并提交新文件夹里的所有 Markdown 报表
+        git add "每日股市财经新闻/*.md"
         git diff --quiet && git diff --staged --quiet || (git commit -m "自动更新今日财经新闻简报" && git push)
-
-    # 🛡️ 安全清理：已彻底删除原有的 [Read Daily Report and Send to Telegram] 步骤
