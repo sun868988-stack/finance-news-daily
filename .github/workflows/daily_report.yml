@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  send-news-mail:
+  build-and-run:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,11 +23,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run script and Send Mail
-      env:
-        EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
-        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-        EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
+    - name: Run script
+      # 🛡️ 安全清理：已彻底移除所有 EMAIL 相关的环境变量
       run: python fetch_news.py
 
     - name: Configure Git
@@ -37,6 +34,5 @@ jobs:
 
     - name: Commit and Push Changes
       run: |
-        # 🛡️ 自动追踪并提交新文件夹里的所有 Markdown 报表
         git add "每日股市财经新闻/*.md"
         git diff --quiet && git diff --staged --quiet || (git commit -m "自动更新今日财经新闻简报" && git push)
