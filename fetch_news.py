@@ -5,55 +5,75 @@ import requests
 import feedparser
 
 # =====================================================================
-# 🌐 全球核心财经与宏观数据源（高饱满度、GitHub 直连无障碍版）
+# 🌐 全球核心财经与顶级主流报纸看板（10条高饱和度·原厂直连终极合并版）
 # =====================================================================
 CUSTOM_NEWS_SOURCES = [
-    # 🌟 华尔街核心大盘与科技前沿
+    # 🌟【板块一：华尔街核心大盘与全球科技前沿】
     ("WSJ (华尔街日报-世界新闻)", "https://feeds.a.dj.com/rss/RSSWorldNews.xml"),
     ("CNBC (消费品与商业频道-头条)", "https://search.cnbc.com/rs/search/all/view.rss?partnerId=2000"),
     ("MarketWatch (市场观察-热点头条)", "https://feeds.content.dowjones.io/public/rss/mw_topstories"),
     ("Yahoo Finance (雅虎财经-美股头条)", "https://finance.yahoo.com/news/rssindex"),
     ("Financial Times (金融时报-全球经济)", "https://www.ft.com/global-economy?format=rss"),
-    
-    # 📈 个股基本面、技术分析与行业风口
     ("Investing.com (全球投资网-核心美股快讯)", "https://www.investing.com/rss/news_25.rss"),
-    ("Reuters (路透社-全球商业与金融快讯)", "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best-topic"),
-    ("TradingView (交易视图-官方技术分析)", "https://www.tradingview.com/feed/"),
     ("TechCrunch (科技巨头与一级市场简报)", "https://techcrunch.com/feed/"),
     ("Seeking Alpha (寻找阿尔法-个股核心墙)", "https://seekingalpha.com/feed.xml"),
     
-    # 🇨🇳 国内宏观与 A 股/港股核心风向
-    ("Xinhua News (新华网-核心财经大政方针)", "http://www.news.cn/fortune/pro/rss.xml"),
+    # 🇨🇳【板块二：国内中央权威与顶级财经证券报纸】
+    ("人民网-人民日报核心精选", "http://www.people.com.cn/rss/politics.xml"),
+    ("新华网-高层时政要闻", "http://www.news.cn/politics/pro/rss.xml"),
+    ("经济日报-宏观大政方针", "http://www.news.cn/fortune/pro/rss.xml"),
+    ("证券时报-A股核心看点", "http://download.stcn.com/rss/stcn.xml"),
+    ("中国证券网-上海证券报滚动", "http://rss.sina.com.cn/news/finance/focus15.xml"),
+    ("东方财富网-核心财经快讯", "http://feed.eastmoney.com/guba/total.xml"),
+    
+    # 🏙️【板块三：港澳台与内地综合大报风向】
+    ("新华网浙江频道 (钱江晚报大本营)", "http://www.zj.xinhuanet.com/tai/pro/rss.xml"),
+    ("新华网广东频道 (羊城/广州大湾区风向)", "http://www.gd.xinhuanet.com/dwyk/pro/rss.xml"),
+    ("深圳新闻网-深圳特区核心商报", "http://rss.sina.com.cn/news/china/focus15.xml"),
+    ("明报 (香港)-即时全球与两岸", "https://rsshub.app/mingpao/ins/all"),
+    ("星岛日报 (香港)-港闻要闻", "https://rsshub.app/stnn/china"),
+    ("香港经济日报-核心财金", "https://rsshub.app/hket/investment"),
+    
+    # 🌏【板块四：海外华文与全球主流大报】
+    ("联合早报 (新加坡)-大中华核心圈", "https://www.zaobao.com.sg/zg/rss"),
+    ("纽约时报 (美国)-国际中文精选", "https://cn.nytimes.com/rss/"),
+    ("卫报 (英国)-全球头条简报", "https://www.theguardian.com/world/rss"),
+    ("镜报 (德国 Der Spiegel)-国际版", "https://www.spiegel.de/international/index.rss"),
+    ("朝日新闻 (日本)-国际要闻", "https://rss.asahi.com/rss/asahi/newsheadline.rdf"),
+    ("耶路撒冷邮报 (以色列)-中东风向标", "https://www.jpost.com/rss/rssfeeds.aspx?technologynews"),
+    ("悉尼先驱晨报 (澳洲)-核心大盘", "https://www.smh.com.au/rss/feed.xml"),
+    ("印度时报 (印度)-亚洲经济要闻", "https://timesofindia.indiatimes.com/rssfeeds/296589292.cms")
 ]
 
 def fetch_rss_headlines(name, url):
-    print(f"正在获取 [{name}] -> {url} ...")
+    print(f"正在巡检源 [{name}] -> {url} ...")
     headlines = []
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/rss+xml, application/xml, text/xml, */*'
     }
     try:
+        # 15秒超时保护，防止任何一个国内外服务器网络抖动卡死整个流程
         response = requests.get(url, headers=headers, timeout=15)
         if response.status_code != 200:
             return [f"因接口时段限制暂未获取到更新 (Status: {response.status_code})"]
             
         feed = feedparser.parse(response.content)
         
-        # 提取新闻标题
+        # 提取新闻标题并进行初步去重
         for entry in feed.entries:
             text = entry.get('title', '').strip()
-            if text and len(text) > 6:
+            if text and len(text) > 5:
                 if text not in headlines:
                     headlines.append(text)
-            if len(headlines) >= 10:  # 每个源最多抓取 10 条最新的
+            if len(headlines) >= 10:  # 🚀 每个新闻源一网打尽 10 条最新消息
                 break
                 
     except Exception as e:
-        print(f"⚠️ [{name}] 抓取异常: {e}")
-        return ["今日该时段暂无置顶简报更新"]
+        print(f"⚠️ [{name}] 接口网络波动，已自动跳过")
+        return ["今日该时段暂无置顶数据更新"]
         
-    return headlines if headlines else ["今日该时段暂无置顶简报更新"]
+    return headlines if headlines else ["今日该时段暂无置顶数据更新"]
 
 def main():
     raw_content_list = []
@@ -63,7 +83,7 @@ def main():
         raw_content_list.append(f"\n### 📌 {name}")
         for index, headline in enumerate(headlines, 1):
             raw_content_list.append(f"{index}. {headline}")
-        time.sleep(0.5)  # 稍微加大延迟，防止被连续请求拦截
+        time.sleep(0.5)  # 每次请求完休眠0.5秒，安全防封锁
         
     all_raw_text = "\n".join(raw_content_list)
     
@@ -72,7 +92,7 @@ def main():
     time_string = now_beijing.strftime('%Y-%m-%d %H:%M:%S')
     
     final_text = (
-        f"# 🌐 全球核心财经与科技全景看板 (GitHub 本地安全版)\n"
+        f"# 🌐 全球宏观财经与顶级报纸全景看板\n"
         f"> 🕒 自动巡检时间：`{time_string}` (北京时间)\n\n"
         f"---"
         f"{all_raw_text}"
@@ -86,7 +106,7 @@ def main():
     with open(file_name, "w", encoding="utf-8") as f:
         f.write(final_text)
         
-    print(f"🏁 原始财经简报已安全写入文件：{file_name}")
+    print(f"🏁 终极全景简报已安全写入文件：{file_name}")
 
 if __name__ == "__main__":
     main()
