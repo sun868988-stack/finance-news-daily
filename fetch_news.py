@@ -112,6 +112,13 @@ import requests
 import xml.etree.ElementTree as ET
 
 # =====================================================================
+import os
+import time
+from datetime import datetime, timedelta, timezone
+import requests
+import xml.etree.ElementTree as ET
+
+# =====================================================================
 # 🌐 全球核心财经与宏观数据源
 # =====================================================================
 CUSTOM_NEWS_SOURCES = [
@@ -187,8 +194,13 @@ def main():
         f"{all_raw_text}"
     )
     
-    # 3. 写入本地文件
-    file_name = now_beijing.strftime('%Y-%m-%d_%H%M.md')
+    # 📂 3. 确保“每日股市财经新闻”文件夹存在并写入文件
+    folder_name = "每日股市财经新闻"
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+        print(f"📁 已成功创建文件夹: {folder_name}")
+        
+    file_name = os.path.join(folder_name, now_beijing.strftime('%Y-%m-%d_%H%M.md'))
     with open(file_name, "w", encoding="utf-8") as f:
         f.write(final_text)
         
