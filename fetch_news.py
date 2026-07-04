@@ -81,60 +81,75 @@ CUSTOM_NEWS_SOURCES = [
     ("Financial Times (金融时报-全球经济)", "https://www.ft.com/global-economy?format=rss"),
     ("CNBC (消费品与商业频道-头条)", "https://search.cnbc.com/rs/search/all/view.rss?partnerId=2000"),
     ("MarketWatch (市场观察-热点头条)", "https://feeds.content.dowjones.io/public/rss/mw_topstories"),
+import os
+import time
+from datetime import datetime, timedelta, timezone
+import requests
+import feedparser
+
+# =====================================================================
+# 🌐 全球核心财经与宏观数据源（高饱满度、GitHub 直连无障碍版）
+# =====================================================================
+CUSTOM_NEWS_SOURCES = [
+    # 🌟 华尔街核心大盘与科技前沿
+    ("WSJ (华尔街日报-世界新闻)", "https://feeds.a.dj.com/rss/RSSWorldNews.xml"),
+    ("CNBC (消费品与商业频道-头条)", "https://search.cnbc.com/rs/search/all/view.rss?partnerId=2000"),
+    ("MarketWatch (市场观察-热点头条)", "https://feeds.content.dowjones.io/public/rss/mw_topstories"),
     ("Yahoo Finance (雅虎财经-美股头条)", "https://finance.yahoo.com/news/rssindex"),
-    ("Barrons (巴伦周刊-深度分析)", "https://feeds.content.dowjones.io/public/rss/barrons_online"),
-    ("Seeking Alpha (寻找阿尔法-个股核心墙)", "https://seekingalpha.com/feed.xml"),
+    ("Financial Times (金融时报-全球经济)", "https://www.ft.com/global-economy?format=rss"),
+    
+    # 📈 个股基本面、技术分析与行业风口
+    ("Investing.com (全球投资网-核心美股快讯)", "https://www.investing.com/rss/news_25.rss"),
+    ("Reuters (路透社-全球商业与金融快讯)", "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best-topic"),
     ("TradingView (交易视图-官方技术分析)", "https://www.tradingview.com/feed/"),
-    ("TechCrunch (科技巨头与一级市场风口简报)", "https://techcrunch.com/feed/"),
-    ("BLS (美国劳工统计局-最新核心指标公告)", "https://www.bls.gov/feed/bls_latest_news.rss"),
-    ("FRED (圣路易斯联储-最新经济数据库动态)", "https://fred.stlouisfed.org/newrss.php"),
-    ("WallStreetcn (华尔街见闻-全球核心实时快讯)", "https://rss.dragonegg.ai/wallstreetcn/global"),
-    ("Bloomberg (彭博社-市场速报)", "https://www.bloomberg.com/feeds/bmd/europe.xml"),
+    ("TechCrunch (科技巨头与一级市场简报)", "https://techcrunch.com/feed/"),
+    ("Seeking Alpha (寻找阿尔法-个股核心墙)", "https://seekingalpha.com/feed.xml"),
+    
+    # 🇨🇳 国内宏观与 A 股/港股核心风向
+    ("Xinhua News (新华网-核心财经大政方针)", "http://www.news.cn/fortune/pro/rss.xml"),
 ]
 
 def fetch_rss_headlines(name, url):
     print(f"正在获取 [{name}] -> {url} ...")
     headlines = []
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*'
     }
     try:
-        # 使用 requests 获取网页，防止被部分防爬虫机制拦截
-        response = requests.get(url, headers=headers, timeout=12)
+        response = requests.get(url, headers=headers, timeout=15)
         if response.status_code != 200:
-            return [f"暂无实时更新 (Status: {response.status_code})"]
+            return [f"因接口时段限制暂未获取到更新 (Status: {response.status_code})"]
             
-        # 🚀 使用 feedparser 强力解析，完美兼容所有华尔街日报/CNBC等特殊格式
         feed = feedparser.parse(response.content)
         
+        # 提取新闻标题
         for entry in feed.entries:
             text = entry.get('title', '').strip()
-            if text and len(text) > 8:
+            if text and len(text) > 6:
                 if text not in headlines:
                     headlines.append(text)
-            if len(headlines) >= 3:
+            if len(headlines) >= 10:  # 🚀 这里的上限已经为你调整为 10 条！
                 break
                 
     except Exception as e:
-        print(f"⚠️ [{name}] 处理数据时发生异常: {e}")
-        return ["该时段接口连接暂不可达"]
+        print(f"⚠️ [{name}] 抓取异常: {e}")
+        return ["今日该时段暂无置顶简报更新"]
         
     return headlines if headlines else ["今日该时段暂无置顶简报更新"]
 
 def main():
     raw_content_list = []
     
-    # 1. 顺序抓取新闻源
     for name, url in CUSTOM_NEWS_SOURCES:
         headlines = fetch_rss_headlines(name, url)
         raw_content_list.append(f"\n### 📌 {name}")
         for index, headline in enumerate(headlines, 1):
             raw_content_list.append(f"{index}. {headline}")
-        time.sleep(0.3)
+        time.sleep(0.5)  # 稍微加大延迟，防止被连续请求拦截
         
     all_raw_text = "\n".join(raw_content_list)
     
-    # 2. 生成报头信息
     tz_beijing = timezone(timedelta(hours=8))
     now_beijing = datetime.now(timezone.utc).astimezone(tz_beijing)
     time_string = now_beijing.strftime('%Y-%m-%d %H:%M:%S')
@@ -146,7 +161,6 @@ def main():
         f"{all_raw_text}"
     )
     
-    # 📂 3. 检查并自动建立文件夹
     folder_name = "每日股市财经新闻"
     if not os.path.exists(folder_name):
         os.makedirs(folder_name, exist_ok=True)
