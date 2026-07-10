@@ -38,7 +38,7 @@ CUSTOM_NEWS_SOURCES = [
     ("朝日新闻 (日本)-国际要闻", "http://www.asahi.com/rss/asahi/newsheadlines.rdf"),
     ("半岛电视台-中东新闻", "https://plink.anyfeeder.com/aljazeera/news"),
     ("悉尼先驱晨报 (澳洲)-核心大盘", "https://www.smh.com.au/rss/feed.xml"),
-    ("印度时报 (印度)-亚洲经济要闻", "https://timesofindia.indiatimes.com/rssfeeds/296589292.cms"),
+    ("印度时报 (印度)-亚洲经济要闻", "https://timesofindia.indiations.com/rssfeeds/296589292.cms"),
 ]
 
 DEDUP_LOOKBACK_DAYS = 7
@@ -76,7 +76,7 @@ def load_history(output_dir, lookback_days=DEDUP_LOOKBACK_DAYS):
                 parts = line.split(". ", 1)
                 if len(parts) > 1:
                     headline = parts[1].strip()
-                    if len(eadline) >= MIN_HEADLINE_LENGTH:
+                    if len(headline) >= MIN_HEADLINE_LENGTH:
                         history[current_source].add(headline)
     total = sum(len(v) for v in history.values())
     logger.info(f"历史去重库加载完成：{len(history)} 个源，共 {total} 条历史标题")
@@ -97,7 +97,7 @@ def fetch_rss_headlines(name, url, history_set=None):
             return [], 0
         feed = feedparser.parse(response.content)
         if not feed.entries:
-            logger.warning(f"[{name}] RSS源返回空内宩")
+            logger.warning(f"[{name}] RSS源返回空内容")
             return [], 0
         seen_in_this_run = set()
         for entry in feed.entries:
@@ -109,7 +109,7 @@ def fetch_rss_headlines(name, url, history_set=None):
         logger.error(f"[{name}] 网络请求失败: {type(e).__name__}: {e}")
         return [], 0
     except Exception as e:
-        logger.error(f"[{name}] 未抄期错误": {type(e).__name__}: {e}")
+        logger.error(f"[{name}] 未预期错误: {type(e).__name__}: {e}")
         return [], 0
 
     if history_set is not None:
@@ -139,11 +139,11 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     logger.info("=" * 60)
-    logger.info"加载历史数据构建去重库...")
+    logger.info("加载历史数据构建去重库...")
     history = load_history(output_dir)
 
     logger.info("=" * 60)
-    logger.info('开始巡检RSS源...")
+    logger.info("开始巡检RSS源...")
 
     raw_content_list = []
     total_new = 0
@@ -165,9 +165,9 @@ def main():
             source_with_updates += 1
         else:
             if dup_count > 0:
-                raw_content_list.append("> 🔄今日无新更新（选有头条与前日重复）")
+                raw_content_list.append("> 🔄 今日无新更新（所有头条与前日重复）")
             else:
-                raw_content_list.append("> ⏳今日该时段暂未获取到数据")
+                raw_content_list.append("> ⏳ 今日该时段暂未获取到数据")
             source_no_updates += 1
 
         time.sleep(0.5)
@@ -208,5 +208,5 @@ def main():
     logger.info(f"   📁 已写入：{file_name}")
 
 
-if __name__ = "__main__":
+if __name__ == "__main__":
     main()
