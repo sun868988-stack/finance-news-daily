@@ -38,7 +38,8 @@ CUSTOM_NEWS_SOURCES = [
     ("朝日新闻 (日本)-国际要闻", "http://www.asahi.com/rss/asahi/newsheadlines.rdf"),
     ("半岛电视台-中东新闻", "https://plink.anyfeeder.com/aljazeera/news"),
     ("悉尼先驱晨报 (澳洲)-核心大盘", "https://www.smh.com.au/rss/feed.xml"),
-    ("印度时报 (印度)-亚洲经济要闻", "https://timesofindia.indiations.com/rssfeeds/296589292.cms"),
+    ("印度时报 (印度)-亚洲经济要闻", "https://timesofindia.indiatimes.com/rssfeeds/296589292.cms"),
+    ("俄罗斯卫星通讯社(俄罗斯)-亚洲经济要闻", "https://sputniknews.cn/export/rss2/archive/index.xml"),
 ]
 
 DEDUP_LOOKBACK_DAYS = 7
