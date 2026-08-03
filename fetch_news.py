@@ -196,7 +196,7 @@ def fetch_rss_headlines(name, url, history_set=None):
 
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_dir = os.path.join(script_dir, "每日股市财经新闻")
+    output_dir = os.path.join(script_dir, "每日股市财经新闻08")
     os.makedirs(output_dir, exist_ok=True)
 
     logger.info("=" * 60)
