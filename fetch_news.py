@@ -195,7 +195,12 @@ def fetch_rss_headlines(name, url, history_set=None):
 
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_dir = os.path.join(script_dir, "每日股市财经新闻08")
+    tz_beijing = timezone(timedelta(hours=8))
+    now_beijing = datetime.now(timezone.utc).astimezone(tz_beijing)
+    # 按月自动生成文件夹名称，格式：202608每日财经新闻
+    month_folder_name = now_beijing.strftime("%Y%m") + "每日财经新闻"
+    output_dir = os.path.join(script_dir, month_folder_name)
+    # 不存在自动创建目录
     os.makedirs(output_dir, exist_ok=True)
 
     logger.info("=" * 60)
@@ -243,8 +248,6 @@ def main():
         time.sleep(0.5)
 
     all_raw_text = "\n".join(raw_content_list)
-    tz_beijing = timezone(timedelta(hours=8))
-    now_beijing = datetime.now(timezone.utc).astimezone(tz_beijing)
     time_string = now_beijing.strftime("%Y-%m-%d %H:%M:%S")
     date_string = now_beijing.strftime("%Y-%m-%d")
 
