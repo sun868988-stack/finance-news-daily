@@ -8,10 +8,17 @@ on:
 jobs:
   build-and-run:
     runs-on: ubuntu-latest
+    # 开启仓库写入权限！必须！
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout repository code
       uses: actions/checkout@v4
+
+    - name: 设置系统时区 北京时间Asia/Shanghai
+      run: |
+        sudo timedatectl set-timezone Asia/Shanghai
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -24,8 +31,11 @@ jobs:
         pip install -r requirements.txt
 
     - name: Run script
-      # 🛡️ 安全清理：已彻底移除所有 EMAIL 相关的环境变量
       run: python fetch_news.py
+
+    #====调试步骤：打印仓库所有文件，确认文件夹生成成功====
+    - name: Debug 查看生成的目录
+      run: ls -la
 
     - name: Configure Git
       run: |
@@ -34,5 +44,11 @@ jobs:
 
     - name: Commit and Push Changes
       run: |
-        git add "每日股市财经新闻08/*.md"
-        git diff --quiet && git diff --staged --quiet || (git commit -m "自动更新今日财经新闻简报" && git push)
+        git add .
+        # 没有变更就跳过提交；有文件就提交，[skip ci]防止循环触发
+        if git diff --cached --quiet; then
+          echo "✅没有新生成的新闻文件，跳过提交"
+        else
+          git commit -m "🤖自动更新今日财经新闻简报 [skip ci]"
+          git push origin main
+        fi
