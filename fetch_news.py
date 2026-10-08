@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 fetch_news.py — 针对网上脚本修改：
-  1. 输出方式恢复为网上原版的纯 Markdown (.md) 文件。
+  1. 输出方式与目录结构按年月（YYYYMM每日财经新闻）保存为 Markdown (.md) 文件。
   2. 新闻源参考本地配置进行了失效修复（替换了 Yahoo/36氪/华尔街见闻等失效源）。
-  3. 保持网上原版的逻辑与路径保存机制。
+  3. 保持网上原版的抓取与处理逻辑。
 """
 
 import os
@@ -93,8 +93,9 @@ def main():
     tz_beijing = timezone(timedelta(hours=8))
     now_beijing = datetime.now(timezone.utc).astimezone(tz_beijing)
     
-    # 网上原版保存方式（输出目录）
-    output_dir = "news_output"
+    # 按年月格式建立文件夹（例如：202610每日财经新闻）
+    month_folder = now_beijing.strftime("%Y%m") + "每日财经新闻"
+    output_dir = os.path.join(os.getcwd(), month_folder)
     os.makedirs(output_dir, exist_ok=True)
 
     time_string = now_beijing.strftime("%Y-%m-%d %H:%M:%S")
@@ -118,12 +119,12 @@ def main():
         md_lines.append("")
         time.sleep(0.3)
 
-    # 导出 Markdown 文件
+    # 保存为 Markdown (.md) 文件，包含时间戳
     out_md = os.path.join(output_dir, f"{date_string}_{now_beijing.strftime('%H%M')}.md")
     with open(out_md, "w", encoding="utf-8") as f:
         f.write("\n".join(md_lines))
 
-    logger.info(f"✅ Markdown 文件已成功生成并保存至：{out_md}，共计 {total_news} 条新闻。")
+    logger.info(f"✅ Markdown 文件已成功保存至：{out_md}，共计 {total_news} 条新闻。")
 
 if __name__ == "__main__":
     main()
