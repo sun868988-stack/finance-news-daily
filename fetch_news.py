@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 fetch_news.py — 针对网上脚本修改：
-  1. 新闻源列表参考本地进行了失效修复（替换了 Yahoo/36氪/华尔街见闻等失效源）。
-  2. 保持网上原有的抓取与 HTML 导出保存逻辑不变。
-  3. 仅保留 HTML 文件输出。
+  1. 输出方式恢复为网上原版的纯 Markdown (.md) 文件。
+  2. 新闻源参考本地配置进行了失效修复（替换了 Yahoo/36氪/华尔街见闻等失效源）。
+  3. 保持网上原版的逻辑与路径保存机制。
 """
 
 import os
@@ -93,62 +93,37 @@ def main():
     tz_beijing = timezone(timedelta(hours=8))
     now_beijing = datetime.now(timezone.utc).astimezone(tz_beijing)
     
-    # 按照网上的相对路径保存方式，确保 GitHub Actions 等环境不会因找不到本地目录而报错
+    # 网上原版保存方式（输出目录）
     output_dir = "news_output"
     os.makedirs(output_dir, exist_ok=True)
-
-    html_sections = []
-    total_news = 0
-
-    for name, url in CUSTOM_NEWS_SOURCES:
-        headlines = fetch_rss_headlines(name, url)
-        section_html = f'<div class="source-card"><h3>📌 {name}</h3><ul>'
-        if headlines:
-            for idx, text in enumerate(headlines, 1):
-                section_html += f'<li>{idx}. {text}</li>'
-            total_news += len(headlines)
-        else:
-            section_html += '<li class="no-news">⏳ 今日该时段暂未获取到数据 / 无更新</li>'
-        section_html += "</ul></div>"
-        html_sections.append(section_html)
-        time.sleep(0.3)
 
     time_string = now_beijing.strftime("%Y-%m-%d %H:%M:%S")
     date_string = now_beijing.strftime("%Y-%m-%d")
 
-    # 网上的 HTML 页面渲染模板
-    full_html = f'''<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>每日财经新闻全景看板</title>
-    <style>
-        *{{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft YaHei",sans-serif;}}
-        body{{background:#f4f7fa;color:#222;padding:20px;max-width:1200px;margin:0 auto;}}
-        h1{{text-align:center;color:#1a365d;margin-bottom:12px;font-size:24px;}}
-        .meta{{text-align:center;color:#555;margin-bottom:24px;font-size:15px;}}
-        .source-card{{background:#ffffff;padding:18px;border-radius:12px;margin-bottom:16px;box-shadow:0 2px 8px #00000014;}}
-        .source-card h3{{font-size:17px;color:#2c3e50;margin-bottom:10px;}}
-        .source-card ul{{padding-left:22px;}}
-        .source-card li{{padding:6px 0;line-height:1.6;font-size:15px;}}
-        .no-news{{color:#888;}}
-    </style>
-</head>
-<body>
-    <h1>🌐 每日财经新闻全景看板</h1>
-    <div class="meta">自动巡检时间：{time_string} (北京时间) | 共获取到 {total_news} 条新闻</div>
-    {"\n".join(html_sections)}
-</body>
-</html>
-'''
+    md_lines = []
+    md_lines.append("# 🌐 全球宏观财经与顶级报纸全景看板")
+    md_lines.append(f"> 🕒 自动巡检时间：`{time_string}` (北京时间)\n")
+    md_lines.append("---")
 
-    # 保存 HTML 文件（网上生成保存方式）
-    out_html = os.path.join(output_dir, f"{date_string}_{now_beijing.strftime('%H%M')}.html")
-    with open(out_html, "w", encoding="utf-8") as f:
-        f.write(full_html)
+    total_news = 0
+    for name, url in CUSTOM_NEWS_SOURCES:
+        headlines = fetch_rss_headlines(name, url)
+        md_lines.append(f"### 📌 {name}")
+        if headlines:
+            for idx, text in enumerate(headlines, 1):
+                md_lines.append(f"{idx}. {text}")
+            total_news += len(headlines)
+        else:
+            md_lines.append("> ⏳ 今日该时段暂未获取到数据 / 无更新")
+        md_lines.append("")
+        time.sleep(0.3)
 
-    logger.info(f"✅ HTML 文件已成功生成并保存至：{out_html}")
+    # 导出 Markdown 文件
+    out_md = os.path.join(output_dir, f"{date_string}_{now_beijing.strftime('%H%M')}.md")
+    with open(out_md, "w", encoding="utf-8") as f:
+        f.write("\n".join(md_lines))
+
+    logger.info(f"✅ Markdown 文件已成功生成并保存至：{out_md}，共计 {total_news} 条新闻。")
 
 if __name__ == "__main__":
     main()
